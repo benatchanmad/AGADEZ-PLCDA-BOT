@@ -16,10 +16,10 @@ import {
 
 export default function SettingsPage() {
   const [demoMode, setDemoMode] = useState(true);
-  const [phoneId, setPhoneId] = useState("109876543210987");
-  const [verifyToken, setVerifyToken] = useState("agadez_plcda_webhook_verify_token_2026");
-  const [emergencyPhone, setEmergencyPhone] = useState("+227 20 44 00 00");
-  const [slaHours, setSlaHours] = useState("24");
+  const [phoneId, setPhoneId] = useState("");
+  const [verifyToken, setVerifyToken] = useState("");
+  const [emergencyPhone, setEmergencyPhone] = useState("");
+  const [slaHours, setSlaHours] = useState("");
   const [saved, setSaved] = useState(false);
 
   const handleSave = (e: React.FormEvent) => {

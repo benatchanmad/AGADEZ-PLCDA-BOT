@@ -8,6 +8,23 @@ export async function GET() {
     return NextResponse.json({ user: null }, { status: 401 });
   }
 
+  if (session.id.startsWith("prototype-")) {
+    return NextResponse.json({
+      user: {
+        id: session.id,
+        name: session.name,
+        email: session.email,
+        role: session.role,
+        department: session.department || "PLCDA Agadez",
+        avatar: null,
+        phone: "",
+        isActive: true,
+        createdAt: new Date(),
+        lastLoginAt: new Date(),
+      },
+    });
+  }
+
   const user = await prisma.user.findUnique({
     where: { id: session.id },
     select: {
@@ -24,5 +41,5 @@ export async function GET() {
     },
   });
 
-  return NextResponse.json({ user });
+  return NextResponse.json({ user: user || session });
 }

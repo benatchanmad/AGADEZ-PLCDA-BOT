@@ -129,18 +129,15 @@ export default function WhatsAppSimulatorPage() {
 
             <div>
               <label className="block text-[11px] font-semibold text-slate-300 uppercase mb-1">
-                Numéro WhatsApp Citoyen (Simulé) :
+                Numéro WhatsApp Citoyen :
               </label>
-              <select
+              <input
+                type="text"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full rounded-xl bg-slate-900 border border-slate-700 p-2 text-xs text-white"
-              >
-                <option value="+22790112233">+227 90 11 22 33 (Citoyen Agadez Sabon Gari)</option>
-                <option value="+22794223344">+227 94 22 33 44 (Citoyen Arlit Akokan)</option>
-                <option value="+22796334455">+227 96 33 44 55 (Citoyen Tchirozérine)</option>
-                <option value="+22798445566">+227 98 44 55 66 (Citoyen Bilma / Djado)</option>
-              </select>
+                placeholder="+227 90 00 00 00"
+                className="w-full rounded-xl bg-slate-900 border border-slate-700 p-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+              />
             </div>
           </div>
 
@@ -185,39 +182,6 @@ export default function WhatsAppSimulatorPage() {
                 className="rounded-xl bg-slate-700 p-2 font-medium hover:bg-emerald-700 text-left transition-colors"
               >
                 5️⃣ Conseils anti-infox
-              </button>
-            </div>
-
-            {/* Test Scenarios */}
-            <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider pt-2 border-t border-slate-700">
-              Scénarios de test réels (1 clic)
-            </h4>
-            <div className="space-y-1.5 text-xs">
-              <button
-                onClick={() =>
-                  quickSend(
-                    "Bonjour, on dit sur WhatsApp que l'accès au marché d'Agadez est bloqué par des grévistes ce matin."
-                  )
-                }
-                className="w-full text-left rounded-xl bg-slate-700/60 p-2 hover:bg-emerald-900/60 transition-colors border border-slate-600 text-[11px]"
-              >
-                🌾 Rumeur marché Agadez
-              </button>
-              <button
-                onClick={() =>
-                  quickSend(
-                    "Urgent ! Un message audio annonce une coupure de la route vers Ingall suite à des pluies torrentielles."
-                  )
-                }
-                className="w-full text-left rounded-xl bg-slate-700/60 p-2 hover:bg-emerald-900/60 transition-colors border border-slate-600 text-[11px]"
-              >
-                🌧️ Rumeur inondation route Ingall
-              </button>
-              <button
-                onClick={() => quickSend("PLCDA-2026-0001")}
-                className="w-full text-left rounded-xl bg-slate-700/60 p-2 hover:bg-emerald-900/60 transition-colors border border-slate-600 text-[11px]"
-              >
-                🔍 Suivi de référence : PLCDA-2026-0001
               </button>
             </div>
           </div>

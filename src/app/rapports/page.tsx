@@ -206,35 +206,31 @@ export default function ReportsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium">
-                  {stats?.categoryDistribution.map((cat: any, idx: number) => {
-                    const total = stats.stats.totalReports || 1;
-                    const pct = Math.round((cat.count / total) * 100);
+                  {!stats?.categoryDistribution || stats.categoryDistribution.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="p-6 text-center text-slate-400">
+                        Aucune donnée catégorielle enregistrée.
+                      </td>
+                    </tr>
+                  ) : (
+                    stats.categoryDistribution.map((cat: any, idx: number) => {
+                      const total = stats.stats.totalReports || 1;
+                      const pct = stats.stats.totalReports ? Math.round((cat.count / total) * 100) : 0;
 
-                    return (
-                      <tr key={idx} className="hover:bg-slate-50">
-                        <td className="p-3 pl-4 font-semibold text-slate-800">{cat.name}</td>
-                        <td className="p-3 font-bold text-slate-900">{cat.count}</td>
-                        <td className="p-3">{pct}%</td>
-                        <td className="p-3 pr-4">
-                          <span
-                            className={`rounded px-2 py-0.5 text-[10px] font-bold ${
-                              cat.name === "Sécurité"
-                                ? "bg-red-100 text-red-800"
-                                : cat.name === "Vie communautaire"
-                                ? "bg-amber-100 text-amber-800"
-                                : "bg-emerald-100 text-emerald-800"
-                            }`}
-                          >
-                            {cat.name === "Sécurité"
-                              ? "Critique"
-                              : cat.name === "Vie communautaire"
-                              ? "Élevé"
-                              : "Modéré"}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                      return (
+                        <tr key={idx} className="hover:bg-slate-50">
+                          <td className="p-3 pl-4 font-semibold text-slate-800">{cat.name}</td>
+                          <td className="p-3 font-bold text-slate-900">{cat.count}</td>
+                          <td className="p-3">{pct}%</td>
+                          <td className="p-3 pr-4">
+                            <span className="rounded px-2 py-0.5 text-[10px] font-bold bg-slate-100 text-slate-600">
+                              —
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
@@ -243,7 +239,7 @@ export default function ReportsPage() {
           {/* Summary table of key rumors treated */}
           <div className="space-y-3">
             <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-              2. Synthèse des dossiers d&apos;enquête emblématiques traités
+              2. Synthèse des dossiers d&apos;enquête traités
             </h3>
             <div className="overflow-x-auto rounded-xl border border-slate-200">
               <table className="w-full text-left text-xs border-collapse">
@@ -257,19 +253,27 @@ export default function ReportsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium">
-                  {reports.slice(0, 5).map((r: any) => (
-                    <tr key={r.id} className="hover:bg-slate-50">
-                      <td className="p-3 pl-4 font-mono font-bold text-slate-700">
-                        {r.trackingCode}
-                      </td>
-                      <td className="p-3 max-w-xs truncate text-slate-800">{r.title}</td>
-                      <td className="p-3 text-slate-600">{r.locality || "Agadez"}</td>
-                      <td className="p-3 font-bold text-emerald-800">{r.status}</td>
-                      <td className="p-3 pr-4 text-slate-500">
-                        Étape {r.verificationStep}/7 &bull; Conforme
+                  {reports.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="p-6 text-center text-slate-400">
+                        Aucun dossier d&apos;enquête enregistré pour le moment.
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    reports.slice(0, 5).map((r: any) => (
+                      <tr key={r.id} className="hover:bg-slate-50">
+                        <td className="p-3 pl-4 font-mono font-bold text-slate-700">
+                          {r.trackingCode}
+                        </td>
+                        <td className="p-3 max-w-xs truncate text-slate-800">{r.title}</td>
+                        <td className="p-3 text-slate-600">{r.locality || "Agadez"}</td>
+                        <td className="p-3 font-bold text-emerald-800">{r.status}</td>
+                        <td className="p-3 pr-4 text-slate-500">
+                          Étape {r.verificationStep}/7 &bull; Conforme
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -279,12 +283,12 @@ export default function ReportsPage() {
           <div className="pt-8 border-t-2 border-slate-200 grid grid-cols-2 gap-8 text-xs text-slate-600">
             <div>
               <p className="font-bold text-slate-900">Le Responsable de la Cellule Veille :</p>
-              <p className="mt-8 font-semibold text-slate-700">Ibrahim Moussa Dan Koulou</p>
+              <p className="mt-8 font-semibold text-slate-400">Signature & Cachet</p>
               <p className="text-[10px] text-slate-400">Vérificateur Terrain Habilité</p>
             </div>
             <div className="text-right">
               <p className="font-bold text-slate-900">Pour la Coordination Régionale PLCDA :</p>
-              <p className="mt-8 font-semibold text-slate-700">Elhadji Amadou Ousmane</p>
+              <p className="mt-8 font-semibold text-slate-400">Signature & Cachet</p>
               <p className="text-[10px] text-slate-400">Superviseur Général PLCDA Agadez</p>
             </div>
           </div>

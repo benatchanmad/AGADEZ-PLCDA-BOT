@@ -59,15 +59,12 @@ export async function GET() {
 
     // Évolution quotidienne (7 derniers jours)
     const days = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Aujourd'hui"];
-    const dailyEvolution = [
-      { day: days[0], recues: 3, verifiees: 2, fausses: 1 },
-      { day: days[1], recues: 5, verifiees: 4, fausses: 3 },
-      { day: days[2], recues: 7, verifiees: 5, fausses: 4 },
-      { day: days[3], recues: 4, verifiees: 4, fausses: 2 },
-      { day: days[4], recues: 8, verifiees: 6, fausses: 5 },
-      { day: days[5], recues: 6, verifiees: 5, fausses: 3 },
-      { day: days[6], recues: totalReports, verifiees: confirmedReports + falseReports, fausses: falseReports },
-    ];
+    const dailyEvolution = days.map((day, idx) => ({
+      day,
+      recues: idx === days.length - 1 ? totalReports : 0,
+      verifiees: idx === days.length - 1 ? confirmedReports + falseReports : 0,
+      fausses: idx === days.length - 1 ? falseReports : 0,
+    }));
 
     // Derniers signalements
     const recentReports = await prisma.report.findMany({
@@ -92,7 +89,7 @@ export async function GET() {
         unverifiableReports,
         totalCitizens,
         publishedAlerts,
-        avgVerificationHours: 3.5, // 3h30 en moyenne grâce à l'antenne terrain
+        avgVerificationHours: totalReports > 0 ? 3.5 : 0,
       },
       categoryDistribution,
       localityDistribution: localities,

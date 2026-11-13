@@ -117,9 +117,11 @@ export async function logActivity({
       userAgent = req.headers.get("user-agent") || "Browser";
     }
 
+    const validUserId = userId && !userId.startsWith("prototype-") ? userId : null;
+
     await prisma.activityLog.create({
       data: {
-        userId: userId || null,
+        userId: validUserId,
         reportId: reportId || null,
         action,
         details: details || null,
