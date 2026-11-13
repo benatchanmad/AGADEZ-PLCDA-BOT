@@ -1,0 +1,63 @@
+# ==============================================================================
+# DOCKER-COMPOSE - AGADEZ PLCDA BOT
+# Architecture complète : Application Next.js + Base de données PostgreSQL
+# ==============================================================================
+
+version: "3.9"
+
+services:
+  # ----------------------------------------------------------------------------
+  # Base de données PostgreSQL
+  # ----------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: agadez_plcda_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: plcda_user
+      POSTGRES_PASSWORD: plcda_secure_password_2026
+      POSTGRES_DB: agadez_plcda_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - plcda_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U plcda_user -d agadez_plcda_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ----------------------------------------------------------------------------
+  # Application Web AGADEZ PLCDA BOT (Next.js + Prisma)
+  # ----------------------------------------------------------------------------
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: agadez_plcda_app
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://plcda_user:plcda_secure_password_2026@postgres:5432/agadez_plcda_db?schema=public
+      - JWT_SECRET=agadez-plcda-super-secret-jwt-key-2026-anti-rumeur-paix-securite
+      - NEXT_PUBLIC_APP_NAME=AGADEZ PLCDA BOT
+      - NEXT_PUBLIC_APP_URL=http://localhost:3000
+      - WHATSAPP_DEMO_MODE=true
+      - WHATSAPP_VERIFY_TOKEN=agadez_plcda_webhook_verify_token_2026
+    networks:
+      - plcda_network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  plcda_network:
+    driver: bridge

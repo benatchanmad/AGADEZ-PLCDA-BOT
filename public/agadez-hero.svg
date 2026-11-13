@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="100%" height="100%">
+  <defs>
+    <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#042213" stop-opacity="0.95"/>
+      <stop offset="50%" stop-color="#0c4a29" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#09361e" stop-opacity="0.98"/>
+    </linearGradient>
+    <linearGradient id="sandDune1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ea580c" stop-opacity="0.25"/>
+      <stop offset="50%" stop-color="#ca8a04" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#ea580c" stop-opacity="0.15"/>
+    </linearGradient>
+    <linearGradient id="sandDune2" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0c7a3d" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#042213" stop-opacity="0.6"/>
+    </linearGradient>
+    <radialGradient id="sunGlow" cx="75%" cy="30%" r="40%">
+      <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.35"/>
+      <stop offset="50%" stop-color="#ea580c" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#042213" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="networkPattern" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
+      <circle cx="40" cy="40" r="1.5" fill="#34d399" fill-opacity="0.2"/>
+      <line x1="40" y1="40" x2="80" y2="40" stroke="#34d399" stroke-width="0.5" stroke-opacity="0.1"/>
+      <line x1="40" y1="40" x2="40" y2="80" stroke="#34d399" stroke-width="0.5" stroke-opacity="0.1"/>
+    </pattern>
+  </defs>
+
+  <!-- Sky Base -->
+  <rect width="1600" height="900" fill="url(#skyGrad)"/>
+  
+  <!-- Digital Verification Network Grid -->
+  <rect width="1600" height="900" fill="url(#networkPattern)"/>
+
+  <!-- Saharan Sun Glow behind Agadez -->
+  <rect width="1600" height="900" fill="url(#sunGlow)"/>
+
+  <!-- Stars & Constellations of the Tenere Night Sky -->
+  <g fill="#ffffff" opacity="0.4">
+    <circle cx="120" cy="80" r="1.5"/>
+    <circle cx="280" cy="140" r="1"/>
+    <circle cx="450" cy="90" r="2"/>
+    <circle cx="680" cy="110" r="1.5"/>
+    <circle cx="890" cy="70" r="1.2"/>
+    <circle cx="1120" cy="130" r="1.8"/>
+    <circle cx="1340" cy="85" r="1"/>
+    <circle cx="1490" cy="160" r="1.5"/>
+  </g>
+
+  <!-- Distant Aïr Mountains Contour -->
+  <path d="M 0,620 L 150,560 L 320,600 L 480,530 L 640,580 L 820,510 L 980,570 L 1180,500 L 1380,560 L 1600,520 L 1600,900 L 0,900 Z" fill="#031b0f" opacity="0.6"/>
+
+  <!-- Rolling Sahel Sand Dunes -->
+  <path d="M 0,690 Q 300,640 600,720 T 1200,680 T 1600,740 L 1600,900 L 0,900 Z" fill="url(#sandDune1)"/>
+  <path d="M 0,760 Q 400,710 800,790 T 1600,770 L 1600,900 L 0,900 Z" fill="url(#sandDune2)"/>
+
+  <!-- Agadez UNESCO Grand Mosque Minaret Silhouette (Icon of Agadez) -->
+  <g transform="translate(1220, 360)" fill="#02140a" opacity="0.85">
+    <!-- Main Tapered Minaret Tower in Banco -->
+    <polygon points="120,500 130,120 180,120 190,500"/>
+    <!-- Top Spire and Lantern -->
+    <polygon points="140,120 145,70 165,70 170,120"/>
+    <polygon points="148,70 155,40 162,70"/>
+    <circle cx="155" cy="35" r="5" fill="#f59e0b" opacity="0.9"/>
+    <!-- Timber Beams (Toron) protruding from Minaret -->
+    <line x1="120" y1="180" x2="190" y2="180" stroke="#042213" stroke-width="4"/>
+    <line x1="122" y1="230" x2="188" y2="230" stroke="#042213" stroke-width="4"/>
+    <line x1="124" y1="280" x2="186" y2="280" stroke="#042213" stroke-width="4"/>
+    <line x1="126" y1="330" x2="184" y2="330" stroke="#042213" stroke-width="4"/>
+    <line x1="128" y1="380" x2="182" y2="380" stroke="#042213" stroke-width="4"/>
+    <line x1="130" y1="430" x2="180" y2="430" stroke="#042213" stroke-width="4"/>
+    <!-- Surrounding earthen city walls and dwellings -->
+    <rect x="30" y="440" width="100" height="70" rx="3"/>
+    <rect x="180" y="450" width="140" height="60" rx="3"/>
+    <rect x="70" y="410" width="50" height="40" rx="2"/>
+    <rect x="220" y="420" width="60" height="40" rx="2"/>
+    <!-- Small palm silhouettes -->
+    <path d="M 20,490 Q 25,440 28,410" stroke="#02140a" stroke-width="4"/>
+    <path d="M 28,410 Q 5,400 0,420 M 28,410 Q 30,390 40,400 M 28,410 Q 15,380 10,390" stroke="#02140a" stroke-width="3" fill="none"/>
+  </g>
+
+  <!-- Stylized Peace & Dialogue Shield Insignia (Faint institutional crest) -->
+  <g transform="translate(100, 260)" opacity="0.08" stroke="#34d399" stroke-width="3" fill="none">
+    <path d="M 120,40 L 220,90 L 220,240 Q 220,380 120,440 Q 20,380 20,240 L 20,90 Z"/>
+    <path d="M 60,180 L 110,230 L 180,140"/>
+  </g>
+</svg>

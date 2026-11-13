@@ -1,0 +1,364 @@
+// ==============================================================================
+// AGADEZ PLCDA BOT - PRISMA SCHEMA
+// Plateforme de Lutte Contre la Désinformation et les Rumeurs (Agadez, Niger)
+// Compatible SQLite (Dev local zéro-config) et PostgreSQL (Production Cloud/VPS)
+// ==============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ------------------------------------------------------------------------------
+// UTILISATEURS & GESTION DES ACCÈS (RBAC)
+// Rôles : SUPER_ADMIN, ADMIN, VERIFIER, COMMUNICATION, OBSERVER
+// ------------------------------------------------------------------------------
+model User {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  password     String
+  phone        String?
+  role         String    @default("VERIFIER") // SUPER_ADMIN | ADMIN | VERIFIER | COMMUNICATION | OBSERVER
+  department   String?   // Ex: Coordination Régionale Agadez, Antenne Arlit, Cellule Veille
+  avatar       String?
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  assignments     Assignment[]
+  verifications   Verification[]
+  validatedAlerts PublicAlert[]  @relation("AlertValidator")
+  activityLogs    ActivityLog[]
+  notifications   Notification[]
+
+  @@map("users")
+}
+
+// ------------------------------------------------------------------------------
+// CITOYENS (Expéditeurs WhatsApp)
+// Confidentialité : Numéro masqué pour affichage public ou opérateurs restreints
+// ------------------------------------------------------------------------------
+model Citizen {
+  id              String    @id @default(cuid())
+  phoneNumber     String    @unique
+  maskedPhone     String?
+  name            String?
+  language        String    @default("fr") // fr | ha (Hausa) | tmq (Tamasheq) | ar (Arabe)
+  locality        String?   // Agadez, Arlit, Tchirozérine, Bilma, Iferouane, Ingall, etc.
+  reputationScore Int       @default(100)
+  isBlocked       Boolean   @default(false)
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  reports         Report[]
+  messages        WhatsAppMessage[]
+
+  @@map("citizens")
+}
+
+// ------------------------------------------------------------------------------
+// CATÉGORIES DE RUMEURS & SIGNALEMENTS
+// Sécurité, Santé, Éducation, Politique, Environnement, Vie communautaire, etc.
+// ------------------------------------------------------------------------------
+model ReportCategory {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  color       String   @default("#0c7a3d")
+  icon        String   @default("Shield")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  reports     Report[]
+  alerts      PublicAlert[]
+
+  @@map("report_categories")
+}
+
+// ------------------------------------------------------------------------------
+// SIGNALEMENTS DE RUMEURS
+// Statuts : EN ATTENTE, EN COURS DE VÉRIFICATION, CONFIRMÉE, FAUSSE, 
+//           PARTIELLEMENT VRAIE, NON VÉRIFIABLE
+// Processus : ÉTAPES 1 à 7
+// ------------------------------------------------------------------------------
+model Report {
+  id                 String    @id @default(cuid())
+  trackingCode       String    @unique // Ex: PLCDA-2026-0089
+  citizenId          String?
+  citizen            Citizen?  @relation(fields: [citizenId], references: [id])
+  categoryId         String?
+  category           ReportCategory? @relation(fields: [categoryId], references: [id])
+  title              String
+  description        String
+  rawText            String?
+  channel            String    @default("WHATSAPP") // WHATSAPP | WEB | CALL | FIELD
+  status             String    @default("EN ATTENTE") 
+  // "EN ATTENTE" | "EN COURS DE VÉRIFICATION" | "CONFIRMÉE" | "FAUSSE" | "PARTIELLEMENT VRAIE" | "NON VÉRIFIABLE"
+  verificationStep   Int       @default(1) // Étape 1 à 7
+  urgency            String    @default("MOYENNE") // FAIBLE | MOYENNE | ÉLEVÉE | CRITIQUE
+  locality           String?   // Commune / Ville / Quartier
+  latitude           Float?
+  longitude          Float?
+  aiSummary          String?   // Synthèse automatique indicative
+  aiDetectedCategory String?
+  aiSuggestedLeads   String?   // Pistes de vérification suggérées
+  isPublished        Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  attachments        ReportAttachment[]
+  assignments        Assignment[]
+  verifications      Verification[]
+  publicAlert        PublicAlert?
+  activityLogs       ActivityLog[]
+
+  @@map("reports")
+}
+
+// ------------------------------------------------------------------------------
+// FICHIERS JOINTS AUX SIGNALEMENTS (Photos, Vidéos, Audios, Documents)
+// ------------------------------------------------------------------------------
+model ReportAttachment {
+  id        String   @id @default(cuid())
+  reportId  String
+  report    Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  fileUrl   String
+  fileName  String
+  fileType  String   // image | video | audio | document
+  fileSize  Int?
+  mimeType  String?
+  createdAt DateTime @default(now())
+
+  @@map("report_attachments")
+}
+
+// ------------------------------------------------------------------------------
+// AFFECTATION DU SIGNALEMENT À UN VÉRIFICATEUR PLCDA (ÉTAPE 3)
+// ------------------------------------------------------------------------------
+model Assignment {
+  id          String    @id @default(cuid())
+  reportId    String
+  report      Report    @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  assignedBy  String?
+  notes       String?
+  status      String    @default("ACTIVE") // ACTIVE | COMPLETED | REASSIGNED
+  assignedAt  DateTime  @default(now())
+  completedAt DateTime?
+
+  @@map("assignments")
+}
+
+// ------------------------------------------------------------------------------
+// VÉRIFICATION DE L'INFORMATION (ÉTAPES 4, 5 & 6)
+// ------------------------------------------------------------------------------
+model Verification {
+  id                       String    @id @default(cuid())
+  reportId                 String
+  report                   Report    @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  verifierId               String
+  verifier                 User      @relation(fields: [verifierId], references: [id])
+  verdict                  String    // CONFIRMÉE | FAUSSE | PARTIELLEMENT VRAIE | NON VÉRIFIABLE
+  summary                  String
+  internalNotes            String?
+  officialResponse         String    // Réponse officielle formulée
+  step                     Int       @default(4)
+  submittedForValidationAt DateTime?
+  validatedById            String?
+  validatedAt              DateTime?
+  validationNotes          String?
+  isApproved               Boolean   @default(false)
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+
+  sources                  VerificationSource[]
+  evidence                 VerificationEvidence[]
+
+  @@map("verifications")
+}
+
+// ------------------------------------------------------------------------------
+// SOURCES DE VÉRIFICATION TERRAIN / OFFICIELLES
+// Ex : Hôpital d'Agadez, Sultanat de l'Aïr, Préfecture, FDS, Leaders religieux
+// ------------------------------------------------------------------------------
+model VerificationSource {
+  id             String       @id @default(cuid())
+  verificationId String
+  verification   Verification @relation(fields: [verificationId], references: [id], onDelete: Cascade)
+  name           String
+  roleOrContact  String?
+  sourceType     String       @default("OFFICIAL") // OFFICIAL | FIELD_WITNESS | INSTITUTION | MEDIA | EXPERT
+  reliability    String       @default("HIGH") // HIGH | MEDIUM | LOW
+  notes          String?
+  isConfidential Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+
+  @@map("verification_sources")
+}
+
+// ------------------------------------------------------------------------------
+// PREUVES DE VÉRIFICATION (Photos authentifiées, démentis officiels, communiqués)
+// ------------------------------------------------------------------------------
+model VerificationEvidence {
+  id             String       @id @default(cuid())
+  verificationId String
+  verification   Verification @relation(fields: [verificationId], references: [id], onDelete: Cascade)
+  title          String
+  description    String?
+  fileUrl        String
+  fileType       String
+  mimeType       String?
+  createdAt      DateTime     @default(now())
+
+  @@map("verification_evidence")
+}
+
+// ------------------------------------------------------------------------------
+// ALERTES PUBLIQUES OFFICIELLES (ÉTAPE 7 - DIFFUSION)
+// ------------------------------------------------------------------------------
+model PublicAlert {
+  id                String          @id @default(cuid())
+  reportId          String?         @unique
+  report            Report?         @relation(fields: [reportId], references: [id])
+  categoryId        String?
+  category          ReportCategory? @relation(fields: [categoryId], references: [id])
+  title             String
+  slug              String          @unique
+  description       String
+  factCheckContent  String
+  priority          String          @default("MOYENNE") // FAIBLE | MOYENNE | ÉLEVÉE | CRITIQUE
+  verdict           String          @default("FAUSSE")
+  sourcesUsed       String?
+  authorId          String
+  validatorId       String?
+  validator         User?           @relation("AlertValidator", fields: [validatorId], references: [id])
+  imageUrl          String?
+  status            String          @default("DRAFT") // DRAFT | PENDING_REVIEW | PUBLISHED | ARCHIVED
+  publishedAt       DateTime?
+  broadcastWhatsApp Boolean         @default(false)
+  broadcastCount    Int             @default(0)
+  viewsCount        Int             @default(0)
+  sharesCount       Int             @default(0)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@map("public_alerts")
+}
+
+// ------------------------------------------------------------------------------
+// FOIRE AUX QUESTIONS MULTILINGUE (Français, Hausa, Tamasheq, Arabe)
+// ------------------------------------------------------------------------------
+model FAQ {
+  id          String   @id @default(cuid())
+  questionFr  String
+  answerFr    String
+  questionHa  String?
+  answerHa    String?
+  questionTmq String?
+  answerTmq   String?
+  questionAr  String?
+  answerAr    String?
+  category    String   @default("GENERAL")
+  sortOrder   Int      @default(0)
+  isPublished Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("faq")
+}
+
+// ------------------------------------------------------------------------------
+// MESSAGES WHATSAPP (LOGGING COMPLET DES ÉCHANGES)
+// ------------------------------------------------------------------------------
+model WhatsAppMessage {
+  id            String   @id @default(cuid())
+  metaMessageId String?  @unique
+  citizenId     String?
+  citizen       Citizen? @relation(fields: [citizenId], references: [id])
+  phoneNumber   String
+  direction     String   // INBOUND | OUTBOUND
+  type          String   @default("text") // text | image | audio | video | interactive
+  body          String?
+  mediaUrl      String?
+  status        String   @default("sent") // received | sent | delivered | read | failed
+  rawPayload    String?
+  createdAt     DateTime @default(now())
+
+  @@map("whatsapp_messages")
+}
+
+// ------------------------------------------------------------------------------
+// MODÈLES DE MESSAGES WHATSAPP (TEMPLATES OFFICIELS META)
+// ------------------------------------------------------------------------------
+model WhatsAppTemplate {
+  id         String   @id @default(cuid())
+  name       String   @unique
+  category   String   @default("UTILITY") // UTILITY | MARKETING
+  language   String   @default("fr")
+  header     String?
+  body       String
+  footer     String?
+  buttons    String?
+  metaStatus String   @default("APPROVED") // PENDING | APPROVED | REJECTED
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("whatsapp_templates")
+}
+
+// ------------------------------------------------------------------------------
+// NOTIFICATIONS SYSTÈME (INTERNES)
+// ------------------------------------------------------------------------------
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      String   @default("INFO") // INFO | WARNING | SUCCESS | DANGER | ASSIGNMENT | VALIDATION
+  link      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("notifications")
+}
+
+// ------------------------------------------------------------------------------
+// JOURNAL D'AUDIT SÉCURISÉ & INALTÉRABLE (ACTIVITÉS)
+// ------------------------------------------------------------------------------
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  reportId  String?
+  report    Report?  @relation(fields: [reportId], references: [id])
+  action    String
+  details   String?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@map("activity_logs")
+}
+
+// ------------------------------------------------------------------------------
+// PARAMÈTRES GLOBAUX DU SYSTÈME
+// ------------------------------------------------------------------------------
+model Settings {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("settings")
+}

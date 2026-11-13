@@ -1,0 +1,307 @@
+// ==============================================================================
+// AGADEZ PLCDA BOT - PRISMA SCHEMA (POSTGRESQL PRODUCTION)
+// Pour déploiement VPS, Kubernetes, Supabase, Neon, ou Docker PostgreSQL
+// ==============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  password     String
+  phone        String?
+  role         String    @default("VERIFIER")
+  department   String?
+  avatar       String?
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  assignments     Assignment[]
+  verifications   Verification[]
+  validatedAlerts PublicAlert[]  @relation("AlertValidator")
+  activityLogs    ActivityLog[]
+  notifications   Notification[]
+
+  @@map("users")
+}
+
+model Citizen {
+  id              String    @id @default(cuid())
+  phoneNumber     String    @unique
+  maskedPhone     String?
+  name            String?
+  language        String    @default("fr")
+  locality        String?
+  reputationScore Int       @default(100)
+  isBlocked       Boolean   @default(false)
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  reports         Report[]
+  messages        WhatsAppMessage[]
+
+  @@map("citizens")
+}
+
+model ReportCategory {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  color       String   @default("#0c7a3d")
+  icon        String   @default("Shield")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  reports     Report[]
+  alerts      PublicAlert[]
+
+  @@map("report_categories")
+}
+
+model Report {
+  id                 String    @id @default(cuid())
+  trackingCode       String    @unique
+  citizenId          String?
+  citizen            Citizen?  @relation(fields: [citizenId], references: [id])
+  categoryId         String?
+  category           ReportCategory? @relation(fields: [categoryId], references: [id])
+  title              String
+  description        String    @db.Text
+  rawText            String?   @db.Text
+  channel            String    @default("WHATSAPP")
+  status             String    @default("EN ATTENTE")
+  verificationStep   Int       @default(1)
+  urgency            String    @default("MOYENNE")
+  locality           String?
+  latitude           Float?
+  longitude          Float?
+  aiSummary          String?   @db.Text
+  aiDetectedCategory String?
+  aiSuggestedLeads   String?   @db.Text
+  isPublished        Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  attachments        ReportAttachment[]
+  assignments        Assignment[]
+  verifications      Verification[]
+  publicAlert        PublicAlert?
+  activityLogs       ActivityLog[]
+
+  @@map("reports")
+}
+
+model ReportAttachment {
+  id        String   @id @default(cuid())
+  reportId  String
+  report    Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  fileUrl   String
+  fileName  String
+  fileType  String
+  fileSize  Int?
+  mimeType  String?
+  createdAt DateTime @default(now())
+
+  @@map("report_attachments")
+}
+
+model Assignment {
+  id          String    @id @default(cuid())
+  reportId    String
+  report      Report    @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  assignedBy  String?
+  notes       String?   @db.Text
+  status      String    @default("ACTIVE")
+  assignedAt  DateTime  @default(now())
+  completedAt DateTime?
+
+  @@map("assignments")
+}
+
+model Verification {
+  id                       String    @id @default(cuid())
+  reportId                 String
+  report                   Report    @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  verifierId               String
+  verifier                 User      @relation(fields: [verifierId], references: [id])
+  verdict                  String
+  summary                  String    @db.Text
+  internalNotes            String?   @db.Text
+  officialResponse         String    @db.Text
+  step                     Int       @default(4)
+  submittedForValidationAt DateTime?
+  validatedById            String?
+  validatedAt              DateTime?
+  validationNotes          String?   @db.Text
+  isApproved               Boolean   @default(false)
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+
+  sources                  VerificationSource[]
+  evidence                 VerificationEvidence[]
+
+  @@map("verifications")
+}
+
+model VerificationSource {
+  id             String       @id @default(cuid())
+  verificationId String
+  verification   Verification @relation(fields: [verificationId], references: [id], onDelete: Cascade)
+  name           String
+  roleOrContact  String?
+  sourceType     String       @default("OFFICIAL")
+  reliability    String       @default("HIGH")
+  notes          String?      @db.Text
+  isConfidential Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+
+  @@map("verification_sources")
+}
+
+model VerificationEvidence {
+  id             String       @id @default(cuid())
+  verificationId String
+  verification   Verification @relation(fields: [verificationId], references: [id], onDelete: Cascade)
+  title          String
+  description    String?      @db.Text
+  fileUrl        String
+  fileType       String
+  mimeType       String?
+  createdAt      DateTime     @default(now())
+
+  @@map("verification_evidence")
+}
+
+model PublicAlert {
+  id                String          @id @default(cuid())
+  reportId          String?         @unique
+  report            Report?         @relation(fields: [reportId], references: [id])
+  categoryId        String?
+  category          ReportCategory? @relation(fields: [categoryId], references: [id])
+  title             String
+  slug              String          @unique
+  description       String          @db.Text
+  factCheckContent  String          @db.Text
+  priority          String          @default("MOYENNE")
+  verdict           String          @default("FAUSSE")
+  sourcesUsed       String?         @db.Text
+  authorId          String
+  validatorId       String?
+  validator         User?           @relation("AlertValidator", fields: [validatorId], references: [id])
+  imageUrl          String?
+  status            String          @default("DRAFT")
+  publishedAt       DateTime?
+  broadcastWhatsApp Boolean         @default(false)
+  broadcastCount    Int             @default(0)
+  viewsCount        Int             @default(0)
+  sharesCount       Int             @default(0)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@map("public_alerts")
+}
+
+model FAQ {
+  id          String   @id @default(cuid())
+  questionFr  String
+  answerFr    String   @db.Text
+  questionHa  String?
+  answerHa    String?  @db.Text
+  questionTmq String?
+  answerTmq   String?  @db.Text
+  questionAr  String?
+  answerAr    String?  @db.Text
+  category    String   @default("GENERAL")
+  sortOrder   Int      @default(0)
+  isPublished Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("faq")
+}
+
+model WhatsAppMessage {
+  id            String   @id @default(cuid())
+  metaMessageId String?  @unique
+  citizenId     String?
+  citizen       Citizen? @relation(fields: [citizenId], references: [id])
+  phoneNumber   String
+  direction     String
+  type          String   @default("text")
+  body          String?  @db.Text
+  mediaUrl      String?
+  status        String   @default("sent")
+  rawPayload    String?  @db.Text
+  createdAt     DateTime @default(now())
+
+  @@map("whatsapp_messages")
+}
+
+model WhatsAppTemplate {
+  id         String   @id @default(cuid())
+  name       String   @unique
+  category   String   @default("UTILITY")
+  language   String   @default("fr")
+  header     String?
+  body       String   @db.Text
+  footer     String?
+  buttons    String?  @db.Text
+  metaStatus String   @default("APPROVED")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("whatsapp_templates")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String   @db.Text
+  type      String   @default("INFO")
+  link      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("notifications")
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  reportId  String?
+  report    Report?  @relation(fields: [reportId], references: [id])
+  action    String
+  details   String?  @db.Text
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@map("activity_logs")
+}
+
+model Settings {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String   @db.Text
+  description String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("settings")
+}
